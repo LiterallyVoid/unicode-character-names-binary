@@ -141,8 +141,6 @@ def main():
 		for range in ranges:
 			compressor.register(range.name.encode("ascii"))
 
-		compressor.insert_common_prefixes()
-
 		header_format = "<8sIIIIIII"
 		# Overwritten later with correct data.
 		args.out.write(struct.pack(header_format,
@@ -222,6 +220,7 @@ def main():
 			range_list_size,
 		))
 
+		args.out.seek(0, 2) # whence 2: offset from end of file
 		print(args.out.tell() / 1024, "KiB")
 
 if __name__ == "__main__":

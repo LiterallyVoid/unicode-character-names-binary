@@ -73,6 +73,7 @@ def main():
 	def read_name(index):
 		if index == 0:
 			return ""
+
 		name_data = data[trie + index:trie + index + 100]
 
 		prefix_offset, prefix_len = unpack_varint(name_data)

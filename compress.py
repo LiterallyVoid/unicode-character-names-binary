@@ -39,17 +39,19 @@ class StringCompressor:
 		self.occured = set()
 		self.unique_edges = defaultdict(int)
 
-	def register(self, entry: bytes) -> int:
+	def register(self, entry: bytes):
 		if entry == b"": return
+		if entry in self.occured:
+			return
 
-		if entry not in self.occured:
-			self.occured.add(entry)
-			self.unique_edges[entry[:-1]] += 1
+		self.occured.add(entry)
+		self.unique_edges[entry[:-1]] += 1
 
 		self.register(entry[:-1])
 
-	def insert_common_prefixes(self):
-		pass
+	# Always returns True if prefix is `b''`
+	def should_use_prefix(self, prefix: bytes):
+		return prefix == b"" or self.unique_edges[prefix] > 1
 
 	def compress(self, entry: bytes) -> int:
 		if (existing := self.prefixes.get(entry)) is not None:
@@ -60,8 +62,11 @@ class StringCompressor:
 
 		chunk_size = 1
 
-		prefix_index = self.compress(entry[:-1])
-		suffix = entry[-1:]
+		while not self.should_use_prefix(entry[:-chunk_size]):
+			chunk_size += 1
+
+		prefix_index = self.compress(entry[:-chunk_size])
+		suffix = entry[-chunk_size:]
 
 		inserted_index = len(self.prefix_trie_bytes)
 

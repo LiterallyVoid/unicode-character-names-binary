@@ -1,0 +1,4 @@
+# In one fell swoop: ucd*.xml, ucd*.bin, ucd*.bin.gz
+ucd.*
+
+__pycache__

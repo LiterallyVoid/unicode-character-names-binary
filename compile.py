@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-import sys, argparse, time, struct
+import sys, argparse, time, struct, typing
 from collections import defaultdict
 from compress import StringCompressor, encode_varint, encode_var_ascii
 
@@ -110,6 +110,12 @@ def parse_args():
 
 	return parser.parse_args()
 
+def align_file_to_u32(file: typing.BinaryIO):
+	location = file.tell()
+
+	for i in range(location % 4):
+		file.write(b"\x00")
+
 def main():
 	reporter = StatusReporter()
 
@@ -169,6 +175,7 @@ def main():
 			0,
 		))
 
+		align_file_to_u32(args.out)
 		range_list_location = args.out.tell()
 		range_list_size = 0
 		for range in ranges:
@@ -191,16 +198,20 @@ def main():
 			args.out.write(struct.pack('<I', compressor.compress(range.name.encode("ascii"))))
 			range_list_size += 8
 
+		align_file_to_u32(args.out)
 		trie_location = args.out.tell()
 		trie_size = len(compressor.prefix_trie_bytes)
 		args.out.write(compressor.prefix_trie_bytes)
 
+		align_file_to_u32(args.out)
 		ages_location = args.out.tell()
 		ages_size = 0
 		for age in ages.keys():
 			encoded = encode_var_ascii(age.encode("ascii"))
 			args.out.write(encoded)
 			ages_size += len(encoded)
+
+		align_file_to_u32(args.out)
 
 		args.out.seek(0)
 		args.out.write(struct.pack(header_format,

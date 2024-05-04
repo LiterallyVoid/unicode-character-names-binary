@@ -26,6 +26,8 @@ def encode_varint(i: int) -> bytes:
 
 	return bytes(arr)
 
+assert encode_varint(624485) == bytes([0xE5, 0x8E, 0x26])
+
 def decode_var_ascii(raw: bytes) -> str:
 	array = bytearray()
 	i = 0

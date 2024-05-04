@@ -37,17 +37,28 @@ def main() -> None:
 	assert version == 2
 
 	def read_name(index: int) -> str:
-		if index == 0:
+		if index <= 0:
 			return ""
 
 		name_data = data[trie + index:trie + index + 100]
 
 		prefix_offset, prefix_len = decode_varint(name_data)
-		prefix = index - prefix_offset
+
+		if prefix_offset <= 0 or prefix_offset > index:
+			raise ValueError("infinite loop or malicious")
 
 		suffix = decode_var_ascii(name_data[prefix_len:])
 
-		return read_name(prefix) + suffix
+		if len(suffix) <= 0:
+			raise ValueError("nametable node suffix has zero characters")
+
+		prefix_index = index - prefix_offset
+		prefix = read_name(prefix_index)
+
+		if len(prefix) + len(suffix) > 200:
+			raise ValueError("codepoint name is >200 characters")
+
+		return prefix + suffix
 
 	for i in range(0, ranges_size, 8):
 		bits, name = struct.unpack("<II", data[ranges + i:ranges + i + 8])

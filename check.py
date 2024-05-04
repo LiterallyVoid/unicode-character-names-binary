@@ -2,6 +2,9 @@
 
 import argparse, struct
 
+from util import decode_var_ascii, decode_varint
+from typing import TextIO
+
 def parse_args():
 	parser = argparse.ArgumentParser(
 		prog = 'check-bin',
@@ -14,44 +17,7 @@ def parse_args():
 
 	return parser.parse_args()
 
-def unpack_from_file(format, file):
-	size = struct.calcsize(format)
-	return struct.unpack(format, file.read(size))
-
-def unpack_var_ascii(raw) -> bytes:
-	array = bytearray()
-	i = 0
-	while raw[i] & 0x80 == 0:
-		array.append(raw[i])
-		i += 1
-
-	array.append(raw[i] & ~0x80)
-
-	if len(array) == 1 and array[0] == 0x00:
-		return ""
-
-	return bytes(array).decode("ascii")
-
-def unpack_varint(raw) -> int:
-	value = 0
-
-	i = 0
-	while True:
-		value *= 128
-		value += raw[i] & 0x7F
-
-		if raw[i] & 0x80 == 0:
-			i += 1
-			break
-
-		i += 1
-
-	return value, i
-
-assert unpack_varint(b"\x23") == (0x23, 1)
-assert unpack_varint(b"\x8F\x04") == (0x0F * 128 + 0x04, 2)
-
-def main():
+def main() -> None:
 	args = parse_args()
 
 	file = args.filename
@@ -62,7 +28,7 @@ def main():
 	unique_ages = []
 	i = 0
 	while i < ages_size:
-		age = unpack_var_ascii(data[ages + i:ages + ages_size])
+		age = decode_var_ascii(data[ages + i:ages + ages_size])
 		i += len(age)
 
 		unique_ages.append(age)
@@ -70,16 +36,16 @@ def main():
 	assert magic == b"UCDNAMES"
 	assert version == 1
 
-	def read_name(index):
+	def read_name(index: int) -> str:
 		if index == 0:
 			return ""
 
 		name_data = data[trie + index:trie + index + 100]
 
-		prefix_offset, prefix_len = unpack_varint(name_data)
+		prefix_offset, prefix_len = decode_varint(name_data)
 		prefix = index - prefix_offset
 
-		suffix = unpack_var_ascii(name_data[prefix_len:])
+		suffix = decode_var_ascii(name_data[prefix_len:])
 
 		return read_name(prefix) + suffix
 

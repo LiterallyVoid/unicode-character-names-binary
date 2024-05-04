@@ -2,7 +2,10 @@
 
 import sys, argparse, time, struct, typing
 from collections import defaultdict
-from compress import StringCompressor, encode_varint, encode_var_ascii
+from compress import StringCompressor
+from util import encode_var_ascii
+
+from types import TracebackType
 
 from dataclasses import dataclass
 from enum import StrEnum
@@ -10,23 +13,23 @@ from enum import StrEnum
 import xml.etree.ElementTree as ET
 
 class TaskStatusReporter:
-	def __init__(self, name):
+	def __init__(self, name: str) -> None:
 		self.name = name
 		self.start_time = time.time()
 
-	def complete(self):
+	def complete(self) -> None:
 		duration_seconds = time.time() - self.start_time
 		print(f"done in {duration_seconds:.3}s", file = sys.stderr)
 
-	def __enter__(self):
+	def __enter__(self) -> None:
 		print(self.name + "...", file = sys.stderr, end = "")
 		sys.stderr.flush()
 
-	def __exit__(self, _type, _value, _traceback):
+	def __exit__(self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None) -> None:
 		self.complete()
 
 class StatusReporter:
-	def __init__(self):
+	def __init__(self) -> None:
 		pass
 
 	def start(self, name: str) -> TaskStatusReporter:
@@ -57,7 +60,7 @@ class RangeClass(StrEnum):
 	character = "char"
 
 class Range:
-	def __init__(self, first: int, last: int, class_: RangeClass, name, age):
+	def __init__(self, first: int, last: int, class_: RangeClass, name: str, age: str):
 		self.first = first
 		self.last = last
 		self.class_ = class_
@@ -87,7 +90,8 @@ def read_ranges(ucd: ET.Element) -> list[Range]:
 				if first_alias is not None:
 					name = first_alias.get("alias")
 
-			age = range_element.get("age")
+			name = name or ""
+			age = range_element.get("age") or ""
 
 			all_ranges.append(Range(range[0], range[1], class_, name, age))
 
@@ -110,13 +114,13 @@ def parse_args():
 
 	return parser.parse_args()
 
-def align_file_to_u32(file: typing.BinaryIO):
+def align_file_to_u32(file: typing.BinaryIO) -> None:
 	location = file.tell()
 
 	for i in range(location % 4):
 		file.write(b"\x00")
 
-def main():
+def main() -> None:
 	reporter = StatusReporter()
 
 	args = parse_args()

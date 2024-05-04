@@ -223,7 +223,7 @@ def main() -> None:
 			b"UCDNAMES",
 
 			# Version
-			1,
+			2,
 
 			trie_location,
 			trie_size,

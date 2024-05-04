@@ -22,7 +22,6 @@ def encode_varint(i: int) -> bytes:
 		arr.append((i % 128) | 0x80)
 		i //= 128
 
-	arr.reverse()
 	arr[-1] &= ~0x80
 
 	return bytes(arr)
@@ -45,11 +44,12 @@ def decode_var_ascii(raw: bytes) -> str:
 # Returns the decoded integer, and additionally how long that integer was.
 def decode_varint(raw: bytes) -> Tuple[int, int]:
 	value = 0
+	mult = 1
 
 	i = 0
 	while True:
-		value *= 128
-		value += raw[i] & 0x7F
+		value += (raw[i] & 0x7F) * mult
+		mult *= 128
 
 		if raw[i] & 0x80 == 0:
 			i += 1
@@ -60,5 +60,5 @@ def decode_varint(raw: bytes) -> Tuple[int, int]:
 	return value, i
 
 assert decode_varint(b"\x23") == (0x23, 1)
-assert decode_varint(b"\x8F\x04") == (0x0F * 128 + 0x04, 2)
+assert decode_varint(b"\x8F\x04") == (0x04 * 128 + 0x0F, 2)
 

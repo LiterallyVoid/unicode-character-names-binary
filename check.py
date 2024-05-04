@@ -34,7 +34,7 @@ def main() -> None:
 		unique_ages.append(age)
 
 	assert magic == b"UCDNAMES"
-	assert version == 1
+	assert version == 2
 
 	def read_name(index: int) -> str:
 		if index == 0:
